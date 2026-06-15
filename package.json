@@ -1,0 +1,21 @@
+{
+  "name": "rn-style-flatten-benchmark",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "app",
+    ".vendor/react-native/packages/*"
+  ],
+  "scripts": {
+    "rn:main": "node scripts/use-react-native-branch.mjs main --install",
+    "rn:optimized": "node scripts/use-react-native-branch.mjs codex/optimize-style-flatten --install",
+    "bench:js": "node scripts/flatten-style-node-benchmark.mjs",
+    "bench:compare": "node scripts/compare-branches.mjs",
+    "test": "yarn workspace style-flatten-benchmark-app test",
+    "lint": "yarn workspace style-flatten-benchmark-app lint",
+    "start": "yarn workspace style-flatten-benchmark-app start --port 8082",
+    "pods": "cd app/ios && bundle install && RCT_METRO_PORT=8082 bundle exec pod install",
+    "ios": "yarn workspace style-flatten-benchmark-app ios --port 8082",
+    "ios:optimized": "yarn rn:optimized && yarn pods && yarn ios"
+  }
+}

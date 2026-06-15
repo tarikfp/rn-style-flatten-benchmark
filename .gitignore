@@ -1,0 +1,14 @@
+.DS_Store
+node_modules/
+yarn-error.log
+rn-source.json
+.vendor/
+results/*.json
+app/node_modules/
+app/package-lock.json
+app/ios/Pods/
+app/ios/build/
+app/ios/Podfile.lock
+app/android/.gradle/
+app/android/app/build/
+app/android/build/
