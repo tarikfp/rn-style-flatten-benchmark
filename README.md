@@ -1,13 +1,32 @@
-# React Native style flattening benchmark
+# React Native flattenStyle before/after benchmark
 
-This repo verifies a React Native `flattenStyle` optimization outside the React Native monorepo.
+This repo verifies one specific React Native `flattenStyle` optimization outside the React Native monorepo.
 
 It links React Native from the fresh fork at `https://github.com/tarikfp/react-native` and compares:
 
-- baseline: `main` at `066c0d8bd8`
-- candidate: `codex/optimize-style-flatten` at `81b5bc26b6`
+- before: `main` at `066c0d8bd8`
+- after: `optimize-style-flatten` at `81b5bc26b6`
 
-The benchmark app is a normal React Native app in `app/`. Its screen remounts a style-heavy pure RN tree using nested style arrays across `Text`, `Image`, `ImageBackground`, `TextInput`, `TouchableOpacity`, and `ScrollView`.
+## What changed
+
+Before this patch, array styles were flattened by recursively calling `flattenStyle` for each array entry. When styles were nested, React Native created intermediate flattened objects and then copied their keys into the outer result.
+
+After this patch, nested arrays are walked directly into one final result object. Null, false, and undefined entries are skipped, and style objects are copied once into the final result.
+
+Behavior is intended to stay the same: object styles still return as-is, array inputs still return a new object, and later styles still override earlier styles.
+
+## Headline result
+
+Latest local `yarn bench:compare` result:
+
+| case | before median ms | after median ms | faster by |
+| --- | ---: | ---: | ---: |
+| nested single style array | 294.79 | 98.73 | 66.5% |
+| nested merged style array | 278.54 | 122.06 | 56.2% |
+
+This is not a blanket "React Native is 66.5% faster" claim. It means this exact `flattenStyle` path is much faster when component styles are composed as nested arrays.
+
+The benchmark app is a normal React Native app in `app/`. Its first screen has one main button: `Run old vs optimized`. It first measures the real `StyleSheet.flatten` loaded by the installed simulator build, then measures the old recursive algorithm and the optimized single-pass algorithm against the same nested style payloads.
 
 ## Quick commands
 
@@ -19,22 +38,17 @@ yarn bench:js
 yarn bench:compare
 ```
 
-`yarn bench:compare` switches both fork branches, runs the same Node microbenchmark against the linked `react-native/Libraries/StyleSheet/flattenStyle`, and writes `results/compare.md`.
+`yarn bench:compare` switches the linked React Native fork between the before and after branches, runs the same Node microbenchmark against `react-native/Libraries/StyleSheet/flattenStyle`, and writes `results/compare.md`.
 
-## Latest local result
+## Full result
 
-See `results/compare.md`.
+See `results/compare.md` for the generated report with the full table and notes for each scenario.
 
-Current run:
+The short version is:
 
-| case | baseline median ms | optimized median ms | improvement |
-| --- | ---: | ---: | ---: |
-| object style | 3.32 | 3.26 | 1.8% |
-| single style array | 126.44 | 123.87 | 2.0% |
-| single effective style array | 137.06 | 126.59 | 7.6% |
-| nested single style array | 295.25 | 98.04 | 66.8% |
-| merged style array | 106.06 | 103.11 | 2.8% |
-| nested merged style array | 275.93 | 120.98 | 56.2% |
+- Object styles barely matter because `flattenStyle(object)` already returns the object directly.
+- Flat arrays get small wins.
+- Nested arrays get the large wins because the old implementation paid for recursive calls plus intermediate object merges.
 
 ## Simulator
 
@@ -50,12 +64,21 @@ In another terminal:
 yarn ios --simulator "iPhone 17"
 ```
 
-The app opens directly to the style-heavy benchmark screen. Press `Run` to collect 15 remount samples on device/simulator.
+The app opens directly to the comparison screen. Press `Run old vs optimized` to measure both algorithms on device/simulator. Lower milliseconds is better.
+
+The first results block is the important one when comparing two installed builds:
+
+- A simulator built from `main` should be close to the old recursive numbers.
+- A simulator built from `optimize-style-flatten` should be close to the optimized single-pass numbers.
+- The controlled old/new block is included on both builds so the input shape and expected before/after gap are visible without switching screens.
+
+For reproducible branch-vs-branch proof without two simulators, use `yarn bench:compare`. It relinks the fork to `main`, runs the benchmark, relinks to `optimize-style-flatten`, runs the same benchmark, and rewrites `results/compare.md`.
 
 ## Validation
 
 ```sh
 yarn test
 yarn lint
+yarn workspace style-flatten-benchmark-app tsc --noEmit
 yarn bench:compare
 ```

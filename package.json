@@ -6,15 +6,19 @@
     "app",
     ".vendor/react-native/packages/*"
   ],
+  "resolutions": {
+    "hermes-compiler": "250829098.0.14"
+  },
   "scripts": {
     "rn:main": "node scripts/use-react-native-branch.mjs main --install",
-    "rn:optimized": "node scripts/use-react-native-branch.mjs codex/optimize-style-flatten --install",
+    "rn:optimized": "node scripts/use-react-native-branch.mjs optimize-style-flatten --install",
     "bench:js": "node scripts/flatten-style-node-benchmark.mjs",
     "bench:compare": "node scripts/compare-branches.mjs",
+    "rn:prepare-ios-artifacts": "node scripts/prepare-ios-artifacts.mjs",
     "test": "yarn workspace style-flatten-benchmark-app test",
     "lint": "yarn workspace style-flatten-benchmark-app lint",
     "start": "yarn workspace style-flatten-benchmark-app start --port 8082",
-    "pods": "cd app/ios && bundle install && RCT_METRO_PORT=8082 bundle exec pod install",
+    "pods": "yarn rn:prepare-ios-artifacts && cd app/ios && PATH=\"/opt/homebrew/opt/ruby/bin:/usr/local/opt/ruby/bin:$PATH\" bundle install && PATH=\"/opt/homebrew/opt/ruby/bin:/usr/local/opt/ruby/bin:$PATH\" RCT_METRO_PORT=8082 bundle exec pod install",
     "ios": "yarn workspace style-flatten-benchmark-app ios --port 8082",
     "ios:optimized": "yarn rn:optimized && yarn pods && yarn ios"
   }

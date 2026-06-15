@@ -6,9 +6,10 @@ rn-source.json
 results/*.json
 app/node_modules/
 app/package-lock.json
+app/Gemfile.lock
+app/ios/*.xcworkspace/
 app/ios/Pods/
 app/ios/build/
-app/ios/Podfile.lock
 app/android/.gradle/
 app/android/app/build/
 app/android/build/
